@@ -9,28 +9,16 @@ struct vec3 {
 	double x, y, z;
 }
 
-final class PositionComponent : Component {
-public:
-	this(vec3 pos) {
-		this.pos = pos;
-	}
-
-	@property ref vec3 Position() { return pos; }
-
-private:
-	vec3 pos;
+final struct PositionComponent {
+	vec3 Position;
+	alias Position this;
+	mixin(ComponentBase!PositionComponent);
 }
 
-final class VelocityComponent : Component {
-public:
-	this(vec3 vel) {
-		this.vel = vel;
-	}
-
-	@property ref vec3 Velocity() { return vel; }
-
-private:
-	vec3 vel;
+final struct VelocityComponent {
+	vec3 Velocity;
+	alias Velocity this;
+	mixin(ComponentBase!VelocityComponent);
 }
 
 final class MovementSystem : System {
@@ -40,15 +28,16 @@ public:
 
 	override void Update(World world) {
 		double delta = world.Delta;
+
 		foreach (Entity entity; world.Entities) {
-			auto pos = entity.GetComponent!PositionComponent;
-			auto vel = entity.GetComponent!VelocityComponent;
+			auto pos = PositionComponent.Get(entity);
+			auto vel = VelocityComponent.Get(entity);
 			if (!pos || !vel)
 				continue;
 
-			pos.Position.x += vel.Velocity.x * delta;
-			pos.Position.y += vel.Velocity.y * delta;
-			pos.Position.z += vel.Velocity.z * delta;
+			pos.x += vel.x * delta;
+			pos.y += vel.y * delta;
+			pos.z += vel.z * delta;
 			writeln(entity, " moved to ", pos.Position);
 		}
 	}
@@ -58,8 +47,8 @@ public:
 int main(string[] args) {
 	World world = new World();
 	Entity entity = world.NewEntity("Bob");
-	entity.AddComponent!PositionComponent(vec3(0, 0, 2));
-	entity.AddComponent!VelocityComponent(vec3(1, 2, -0.5));
+	PositionComponent.Add(entity, vec3(0, 0, 2));
+	VelocityComponent.Add(entity, vec3(1, 2, -0.5));
 	entity.Finalize();
 
 	world.AddSystem!MovementSystem();
